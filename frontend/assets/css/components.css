@@ -1,0 +1,557 @@
+/* --- Tabs --- */
+.tabs{
+  display:flex;
+  gap:10px;
+  margin: 12px 0 14px;
+}
+.tab-button{
+  flex:1;
+  padding: 12px 12px;
+  border:none;
+  border-radius: 12px;
+  cursor:pointer;
+  font-weight: 800;
+  color: rgba(255,255,255,.92);
+  background: rgba(2,6,23,.55);
+  transition: transform .12s ease, background .2s ease, opacity .2s ease;
+}
+.tab-button:hover{ transform: translateY(-1px); opacity: .95; }
+.tab-button.active{
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  box-shadow: 0 10px 22px rgba(34,197,94,.28);
+}
+
+/* --- Role buttons --- */
+.role-buttons{
+  display:flex;
+  gap:10px;
+  margin-bottom: 14px;
+}
+.role-btn{
+  flex:1;
+  padding: 12px 12px;
+  border:none;
+  border-radius: 12px;
+  cursor:pointer;
+  font-weight: 800;
+  color: rgba(255,255,255,.92);
+  background: rgba(2,6,23,.55);
+  transition: transform .12s ease, background .2s ease, opacity .2s ease;
+  margin-top:0;
+}
+.role-btn:hover{ transform: translateY(-1px); opacity: .95; }
+.role-btn.active{
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  box-shadow: 0 10px 22px rgba(6,182,212,.25);
+}
+
+/* --- Forms --- */
+.auth-form{
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,.55);
+  box-shadow: var(--shadow2);
+}
+
+input, select{
+  width:100%;
+  padding: 12px 12px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(15,23,42,.16);
+  border-radius: 12px;
+  outline: none;
+  background: rgba(255,255,255,.9);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .12s ease;
+}
+input:focus, select:focus{
+  border-color: rgba(34,197,94,.55);
+  box-shadow: 0 0 0 4px rgba(34,197,94,.18);
+}
+
+input.input-error, select.input-error{
+  border-color: rgba(239,68,68,.75);
+  box-shadow: 0 0 0 4px rgba(239,68,68,.15);
+}
+input.input-ok, select.input-ok{
+  border-color: rgba(34,197,94,.75);
+  box-shadow: 0 0 0 4px rgba(34,197,94,.12);
+}
+
+/* File input */
+input[type="file"]{
+  background: rgba(255,255,255,.95);
+  padding: 10px;
+  cursor:pointer;
+}
+
+/* Address group */
+.address-group{
+  display:flex;
+  gap: 10px;
+}
+.address-group input{ flex:1; }
+
+/* --- Buttons --- */
+button{
+  width:100%;
+  padding: 12px 14px;
+  border:none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor:pointer;
+  color:white;
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  box-shadow: 0 12px 22px rgba(34,197,94,.22);
+  transition: transform .12s ease, filter .18s ease, box-shadow .18s ease;
+  margin-top: 10px;
+}
+button:hover{
+  filter: brightness(1.02);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(34,197,94,.26);
+}
+button:active{ transform: translateY(0); }
+
+/* Secondary/danger (targets your inline buttons too) */
+button[style*="background:#f44336"],
+button[style*="background: #f44336"]{
+  background: linear-gradient(135deg, #ef4444, #f97316) !important;
+  box-shadow: 0 12px 22px rgba(239,68,68,.22);
+}
+button[style*="background:#00838f"],
+button[style*="background: #00838f"]{
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4) !important;
+  box-shadow: 0 12px 22px rgba(6,182,212,.22);
+}
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+  transform:none;
+}
+
+/* Reserve */
+#reserveBtn{
+  background: linear-gradient(135deg, #fb7185, #f97316);
+  box-shadow: 0 12px 22px rgba(249,115,22,.22);
+  margin-bottom: 6px;
+}
+
+/* --- Errors / warnings --- */
+.error{
+  color: #b91c1c;
+  text-align:center;
+  margin: 8px 0 10px;
+  font-weight: 800;
+  min-height: 18px;
+}
+.error.shake{
+  animation: shake .28s ease-in-out;
+}
+@keyframes shake{
+  0%{ transform: translateX(0); }
+  25%{ transform: translateX(-6px); }
+  50%{ transform: translateX(6px); }
+  75%{ transform: translateX(-4px); }
+  100%{ transform: translateX(0); }
+}
+
+.warning{
+  color: #7c2d12;
+  font-size: 0.92em;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(245,158,11,.45);
+  border-radius: 14px;
+  background: rgba(245,158,11,.15);
+  font-weight: 800;
+}
+
+/* --- Product cards --- */
+.product-list{
+  display:grid;
+  grid-template-columns: repeat( auto-fit, minmax(250px, 1fr) );
+  gap: 14px;
+}
+
+.product{
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(255,255,255,.78);
+  box-shadow: var(--shadow2);
+  overflow:hidden;
+  transition: transform .14s ease, box-shadow .18s ease;
+}
+.product:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(2,6,23,.14);
+}
+.product h4{
+  margin: 4px 0 8px;
+  color:#0b3b25;
+}
+
+.product img{
+  width:100%;
+  height: 190px;
+  object-fit: cover;
+  border-radius: 14px;
+  margin: 10px 0 8px;
+  display:block;
+  border: 1px solid rgba(15,23,42,.08);
+  background: rgba(255,255,255,.95);
+}
+
+.stock-info{
+  font-weight: 900;
+  color: #b45309;
+}
+.eski-fiyat{
+  text-decoration: line-through;
+  color: #64748b;
+  font-size: .92em;
+  margin-right: 6px;
+}
+.fiyat-grup{
+  font-weight: 900;
+  color: #166534;
+}
+
+.product button{
+  width:auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.product-action-group{
+  display:flex;
+  gap: 8px;
+  align-items:center;
+}
+.product-action-group input{
+  width: 84px;
+  margin-bottom: 0;
+}
+.product-action-group button{
+  flex: 1;
+  margin: 0;
+}
+
+/* --- Cart list --- */
+#cartItems{
+  padding-left: 14px;
+}
+#cartItems li{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(15,23,42,.18);
+}
+#cartItems li button{
+  width:auto;
+  padding: 6px 10px;
+  font-size: 12px;
+  margin: 0;
+  border-radius: 12px;
+}
+
+/* --- Reservations --- */
+.reservation-list{
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(6,182,212,.28);
+  border-radius: 16px;
+  background: rgba(6,182,212,.10);
+}
+.reservation-list strong{
+  color: #0e7490;
+}
+
+/* --- Modal (QR) --- */
+.modal{
+  display:none;
+  position: fixed;
+  z-index: 1000;
+  left:0; top:0;
+  width:100%; height:100%;
+  overflow:auto;
+  background-color: rgba(2,6,23,0.65);
+  backdrop-filter: blur(6px);
+}
+.modal-content{
+  background: rgba(255,255,255,.92);
+  margin: 10% auto;
+  padding: 22px;
+  border: 1px solid rgba(15,23,42,.12);
+  width: 92%;
+  max-width: 420px;
+  text-align:center;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  position: relative;
+  animation: modalIn .28s ease-out;
+}
+@keyframes modalIn{
+  from{ transform: translateY(-14px) scale(.98); opacity:0; }
+  to{ transform: translateY(0) scale(1); opacity:1; }
+}
+.close-btn{
+  color:#64748b;
+  font-size: 28px;
+  font-weight: 900;
+  cursor:pointer;
+  position:absolute;
+  right: 16px; top: 10px;
+}
+.close-btn:hover{ color:#0b1220; }
+
+#qrCodeContainer{
+  margin: 18px 0;
+  padding: 10px;
+  border: 2px dashed rgba(22,163,74,.65);
+  display:inline-block;
+  border-radius: 14px;
+  background: rgba(255,255,255,.95);
+}
+
+/* --- Business scan additions --- */
+.business-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.muted-note{
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.scan-modal{ max-width: 520px; }
+.scan-wrap{
+  margin: 10px auto 8px;
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 16px;
+  overflow:hidden;
+  background: rgba(255,255,255,.85);
+  box-shadow: var(--shadow2);
+}
+#scanVideo{
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display:block;
+}
+.scan-status{
+  margin-top: 10px;
+  font-weight: 900;
+  color: #0b3b25;
+}
+.scan-result{
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(34,197,94,.25);
+  background: rgba(34,197,94,.10);
+  text-align:left;
+}
+.scan-result-text{
+  font-size: 14px;
+  color: #0b1220;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+.scan-hint{
+  margin-top: 10px;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* --- Business register: 3'lü select için daha iyi görünüm --- */
+.address-group.address-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px; }
+/* --- Topbar (Welcome + Avatar + Logout) --- */
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 4px 2px;
+  margin-bottom: 10px;
+}
+
+.topbar-left{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.avatar{
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 900;
+  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  box-shadow: 0 10px 18px rgba(34,197,94,.20);
+  flex: 0 0 auto;
+}
+
+.avatar.business{
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  box-shadow: 0 10px 18px rgba(6,182,212,.20);
+}
+
+.welcome-text{ min-width:0; }
+
+.welcome-title{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.welcome-title span{
+  font-size: 18px;
+  font-weight: 900;
+  color: #0b3b25;
+}
+
+.welcome-subtitle{
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.role-badge{
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(34,197,94,.12);
+  color: #166534;
+  border: 1px solid rgba(34,197,94,.25);
+}
+
+.role-badge.business{
+  background: rgba(6,182,212,.12);
+  color: #0e7490;
+  border: 1px solid rgba(6,182,212,.25);
+}
+
+.logout-btn{
+  width: auto !important;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #ef4444 !important;   /* düz kırmızı */
+  color: #fff;
+  font-weight: 700;
+
+  box-shadow: none !important;      /* ❌ gölge yok */
+  filter: none !important;          /* ❌ parlaklık yok */
+  transition: background 0.2s ease; /* sadece renk geçişi */
+  margin-top: 0;
+  white-space: nowrap;
+}
+.logout-btn:hover{
+  background: #dc2626 !important;  /* biraz koyu kırmızı */
+  transform: none;                 /* zıplama yok */
+  box-shadow: none;                /* gölge yok */
+}
+
+/* ... components.css içindeki mevcut kurallar ... */
+
+.logout-btn:hover{
+  background: #dc2626 !important;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== Business dashboard layout cleanup ===== */
+#businessSection hr {
+  margin: 28px 0;
+  border-color: rgba(0,0,0,0.08);
+}
+
+/* Section blocks */
+#businessSection h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+/* Turn each main block into a soft card */
+/* Only card-ify meaningful blocks */
+#businessSection .reservation-list,
+#businessSection .product,
+#businessSection .business-actions{
+  background: rgba(255,255,255,0.85);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 22px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+ {
+  background: rgba(255,255,255,0.85);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 22px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+/* Scan QR row cleanup */
+.business-actions {
+  background: rgba(255,255,255,0.9);
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+/* ===== Edit Product Modal additions ===== */
+.edit-modal h3{
+  font-weight: 900;
+  color: #0b3b25;
+}
+
+.modal-actions{
+  display:flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.modal-actions button{
+  flex:1;
+  width:auto;
+  margin-top: 0;
+}
+
+.edit-image-row{
+  margin-top: 10px;
+  text-align:left;
+}
+.edit-image-preview{
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 14px;
+  margin-top: 10px;
+  display:none;
+  border: 1px solid rgba(15,23,42,.10);
+}
+

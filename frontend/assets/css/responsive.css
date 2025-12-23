@@ -1,0 +1,13 @@
+/* --- Responsive --- */
+@media (max-width: 640px){
+  .container{ padding: 14px; }
+  .content-section{ padding: 16px; }
+  header h1{ font-size: 18px; }
+  .address-group{ flex-direction: column; }
+
+  .address-group.address-3 {
+    grid-template-columns: 1fr;
+  }
+
+  #scanVideo{ height: 240px; }
+}

@@ -1,4 +1,5 @@
 const auth = {
+    // KULLANICI GİRİŞİ
     async login() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPass').value;
@@ -15,7 +16,7 @@ const auth = {
             const result = await response.json();
 
             if (result.status === 'success') {
-                console.log("Login success, showing dashboard for:", result.user.name);
+                console.log("Login successful:", result.user);
                 this.showDashboard(result.user);
             } else {
                 alert(result.message);
@@ -26,6 +27,7 @@ const auth = {
         }
     },
 
+    // KULLANICI KAYDI
     async register() {
         const name = document.getElementById('regName').value;
         const email = document.getElementById('regEmail').value;
@@ -34,79 +36,112 @@ const auth = {
 
         if (!name || !email || !password) return alert("Please fill all fields.");
 
-        const response = await fetch('api/auth.php?action=register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, role })
-        });
-        const result = await response.json();
+        try {
+            const response = await fetch('api/auth.php?action=register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, role })
+            });
+            const result = await response.json();
 
-        alert(result.message);
-        if (result.status === 'success') toggleAuth();
+            alert(result.message);
+            if (result.status === 'success') toggleAuth();
+        } catch (error) {
+            console.error("Register Error:", error);
+        }
     },
 
+    // DASHBOARD EKRANINI GÖSTERME
     showDashboard(user) {
-        // Form alanlarını gizle
-        const authSection = document.getElementById('auth-section');
-        const dashSection = document.getElementById('dashboard-section');
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('dashboard-section').style.display = 'block';
         
-        if (authSection) authSection.style.display = 'none';
-        if (dashSection) dashSection.style.display = 'block';
-
-        // Kullanıcı bilgilerini yazdır
         document.getElementById('user-display-name').innerText = user.name;
         document.getElementById('user-display-role').innerText = user.role.toUpperCase();
 
         const content = document.getElementById('role-content');
 
+        // Eğer kullanıcı Donor ise Ürün Ekleme Formunu Göster
         if (user.role === 'donor') {
             content.innerHTML = `
                 <div class="donor-panel">
                     <h3>Add New Surplus Food</h3>
                     <div class="listing-form">
-                        <input type="text" id="itemName" placeholder="Item Name (e.g. Fresh Bread)">
-                        <input type="number" id="itemQty" placeholder="Quantity">
-                        <input type="text" id="location" placeholder="Pickup Location">
-                        <label>Expiration Date:</label>
+                        <label>Item Name</label>
+                        <input type="text" id="itemName" placeholder="e.g. Fresh Bread">
+                        
+                        <label>Quantity</label>
+                        <input type="number" id="itemQty" placeholder="Amount">
+                        
+                        <label>Pickup Location</label>
+                        <input type="text" id="location" placeholder="Address">
+                        
+                        <label>Expiration Date</label>
                         <input type="date" id="expDate">
-                        <input type="number" step="0.01" id="itemPrice" placeholder="Price (0 for donation)">
-                        <button onclick="donor.createListing()">Post Listing</button>
+                        
+                        <label>Price (0 for donation)</label>
+                        <input type="number" step="0.01" id="itemPrice" placeholder="0.00">
+                        
+                        <button type="button" onclick="donor.createListing()">Post Listing</button>
                     </div>
                 </div>
             `;
         } else {
-            content.innerHTML = `<h3>Receiver Panel</h3><p>Welcome! Browse available food near you.</p>`;
+            // Eğer kullanıcı Receiver ise İlanları Görme Paneli
+            content.innerHTML = `
+                <div class="receiver-panel">
+                    <h3>Available Food Near You</h3>
+                    <p>Fetching active listings...</p>
+                </div>
+            `;
         }
     },
 
+    // ÇIKIŞ YAP
     logout() {
         location.reload();
     }
 };
 
 const donor = {
+    // YENİ İLAN OLUŞTURMA
     async createListing() {
+        console.log("Post Listing button clicked!"); // Konsolda kontrol için
+
         const data = {
             name: document.getElementById('itemName').value,
             quantity: document.getElementById('itemQty').value,
             location: document.getElementById('location').value,
             expiration_date: document.getElementById('expDate').value,
-            price: document.getElementById('itemPrice').value || 0,
-            type: 'food'
+            price: document.getElementById('itemPrice').value || 0
         };
 
-        const response = await fetch('api/listings.php?action=create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        alert(result.message);
-        if (result.status === 'success') location.reload();
+        // Alanların boş olup olmadığını kontrol et
+        if(!data.name || !data.quantity || !data.location || !data.expiration_date) {
+            return alert("Please fill all listing details.");
+        }
+
+        try {
+            const response = await fetch('api/listings.php?action=create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            alert(result.message);
+            
+            if (result.status === 'success') {
+                location.reload(); // Başarılıysa sayfayı yenile ve listeyi güncelle
+            }
+        } catch (error) {
+            console.error("Listing Error:", error);
+            alert("Could not post listing. Check Console.");
+        }
     }
 };
 
+// GİRİŞ VE KAYIT EKRANI ARASINDA GEÇİŞ
 function toggleAuth() {
     const l = document.getElementById('loginForm');
     const r = document.getElementById('registerForm');

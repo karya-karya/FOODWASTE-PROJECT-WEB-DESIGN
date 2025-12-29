@@ -6,11 +6,18 @@ header('Content-Type: application/json');
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
-// İLANLARI LİSTELEME (Bağışçının kendi ilanları)
+// VERİLERİ GETİRME (Listeleme)
 if ($method === 'GET' && isset($_SESSION['user_id'])) {
     try {
-        $stmt = $pdo->prepare("SELECT * FROM listings WHERE donor_id = ? ORDER BY created_at DESC");
-        $stmt->execute([$_SESSION['user_id']]);
+        if ($_SESSION['role'] === 'donor') {
+            // Bağışçı sadece kendi ilanlarını görür
+            $stmt = $pdo->prepare("SELECT * FROM listings WHERE donor_id = ? ORDER BY created_at DESC");
+            $stmt->execute([$_SESSION['user_id']]);
+        } else {
+            // Alıcı marketteki tüm AKTİF ilanları görür
+            $stmt = $pdo->prepare("SELECT * FROM listings WHERE status = 'active' ORDER BY created_at DESC");
+            $stmt->execute();
+        }
         $listings = $stmt->fetchAll();
         echo json_encode(["status" => "success", "listings" => $listings]);
     } catch (Exception $e) {
@@ -19,7 +26,7 @@ if ($method === 'GET' && isset($_SESSION['user_id'])) {
     exit;
 }
 
-// YENİ İLAN EKLEME
+// YENİ İLAN OLUŞTURMA (Sadece Donor için)
 if ($method === 'POST' && $action === 'create' && isset($_SESSION['user_id'])) {
     $data = json_decode(file_get_contents('php://input'), true);
     try {
@@ -39,3 +46,4 @@ if ($method === 'POST' && $action === 'create' && isset($_SESSION['user_id'])) {
     }
     exit;
 }
+?>

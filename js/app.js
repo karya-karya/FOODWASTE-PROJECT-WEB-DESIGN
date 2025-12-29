@@ -2,8 +2,6 @@ const auth = {
     async login() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPass').value;
-        if (!email || !password) return alert("Please fill all fields.");
-
         const response = await fetch('api/auth.php?action=login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -50,8 +48,8 @@ const auth = {
                         <button type="button" onclick="donor.createListing()">Post Listing</button>
                     </div>
                     <hr>
-                    <h3>My Active Listings</h3>
-                    <div id="my-listings"></div>
+                    <h3>My Inventory Control</h3>
+                    <div id="my-listings" class="table-responsive"></div>
                 </div>`;
             donor.loadMyListings();
         } else {
@@ -91,15 +89,42 @@ const donor = {
         const response = await fetch('api/listings.php');
         const result = await response.json();
         const container = document.getElementById('my-listings');
+        
         if (result.listings.length > 0) {
-            let html = `<table class="listing-table"><thead><tr><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody>`;
+            let html = `<table class="listing-table"><thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead><tbody>`;
             result.listings.forEach(item => {
-                html += `<tr><td>${item.name}</td><td>${item.quantity}</td><td><span class="badge ${item.status}">${item.status}</span></td></tr>`;
+                let actionBtn = '';
+                if (item.status === 'reserved') {
+                    actionBtn = `<button class="btn-sm btn-warn" onclick="donor.completeListing(${item.id})">Deliver</button>`;
+                } else if (item.status === 'completed') {
+                    actionBtn = `<small class="text-muted">Completed</small>`;
+                } else {
+                    actionBtn = `<small class="text-info">Active</small>`;
+                }
+
+                html += `<tr>
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td><span class="badge ${item.status}">${item.status}</span></td>
+                    <td>${actionBtn}</td>
+                </tr>`;
             });
             container.innerHTML = html + `</tbody></table>`;
         } else {
-            container.innerHTML = "<p>No listings yet.</p>";
+            container.innerHTML = "<p>You have no listings.</p>";
         }
+    },
+
+    async completeListing(id) {
+        if(!confirm("Has this item been delivered?")) return;
+        const response = await fetch('api/listings.php?action=complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ listing_id: id })
+        });
+        const result = await response.json();
+        alert(result.message);
+        if (result.status === 'success') this.loadMyListings();
     }
 };
 
@@ -122,12 +147,12 @@ const receiver = {
             });
             container.innerHTML = html;
         } else {
-            container.innerHTML = "<p>No food available.</p>";
+            container.innerHTML = "<p>No food available in market.</p>";
         }
     },
 
     async claimFood(id) {
-        if (!confirm("Do you want to claim this item?")) return;
+        if (!confirm("Claim this item?")) return;
         const response = await fetch('api/listings.php?action=claim', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

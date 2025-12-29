@@ -10,7 +10,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'GET' && isset($_SESSION['user_id'])) {
     try {
         if ($_SESSION['role'] === 'donor') {
-            // Donor: Sadece kendi ilanlarını görsün
+            // Donor: Kendi eklediği her şeyi görsün (active, reserved, completed)
             $stmt = $pdo->prepare("SELECT * FROM listings WHERE donor_id = ? ORDER BY created_at DESC");
             $stmt->execute([$_SESSION['user_id']]);
         } else {
@@ -26,11 +26,11 @@ if ($method === 'GET' && isset($_SESSION['user_id'])) {
     exit;
 }
 
-// 2. İŞLEM YAPMA (POST)
+// 2. İŞLEMLER (POST)
 if ($method === 'POST' && isset($_SESSION['user_id'])) {
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // A. YENİ İLAN OLUŞTURMA
+    // A. YENİ İLAN
     if ($action === 'create') {
         try {
             $stmt = $pdo->prepare("INSERT INTO listings (donor_id, name, quantity, type, location, expiration_date, price, status) 
@@ -41,22 +41,27 @@ if ($method === 'POST' && isset($_SESSION['user_id'])) {
             ]);
             echo json_encode(["status" => "success", "message" => "Item listed successfully!"]);
         } catch (Exception $e) {
-            echo json_encode(["status" => "error", "message" => "Create Error: " . $e->getMessage()]);
+            echo json_encode(["status" => "error", "message" => "Create Error"]);
         }
     } 
-    // B. ÜRÜNÜ TALEP ETME (CLAIM)
+    // B. TALEP ETME (CLAIM)
     else if ($action === 'claim') {
         try {
             $stmt = $pdo->prepare("UPDATE listings SET status = 'reserved' WHERE id = ? AND status = 'active'");
             $stmt->execute([$data['listing_id']]);
-            
-            if ($stmt->rowCount() > 0) {
-                echo json_encode(["status" => "success", "message" => "Food successfully claimed!"]);
-            } else {
-                echo json_encode(["status" => "error", "message" => "Item already claimed or unavailable."]);
-            }
+            echo json_encode(["status" => "success", "message" => "Food successfully claimed!"]);
         } catch (Exception $e) {
-            echo json_encode(["status" => "error", "message" => "Claim Error: " . $e->getMessage()]);
+            echo json_encode(["status" => "error", "message" => "Claim failed"]);
+        }
+    }
+    // C. TESLİM ETME (COMPLETE)
+    else if ($action === 'complete') {
+        try {
+            $stmt = $pdo->prepare("UPDATE listings SET status = 'completed' WHERE id = ? AND donor_id = ?");
+            $stmt->execute([$data['listing_id'], $_SESSION['user_id']]);
+            echo json_encode(["status" => "success", "message" => "Item marked as delivered!"]);
+        } catch (Exception $e) {
+            echo json_encode(["status" => "error", "message" => "Completion failed"]);
         }
     }
     exit;

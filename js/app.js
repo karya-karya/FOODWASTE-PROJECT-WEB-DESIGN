@@ -37,6 +37,7 @@ const auth = {
         document.getElementById('user-display-role').innerText = user.role.toUpperCase();
 
         const content = document.getElementById('role-content');
+
         if (user.role === 'donor') {
             content.innerHTML = `
                 <div class="donor-panel">
@@ -48,47 +49,68 @@ const auth = {
                             <input type="text" id="location" placeholder="Pickup Location">
                             <input type="date" id="expDate">
                             <input type="number" step="0.01" id="itemPrice" placeholder="Price (0 for free)">
+
+                            <!-- IMAGE INPUT -->
+                            <input type="file" id="itemImage" accept="image/*">
+
                             <button type="button" onclick="donor.createListing()">Post Listing</button>
                         </div>
                     </div>
-                    
-                    <h3 class="mt-4">Active & Reserved Items</h3>
+
+                    <h3 class="mt-4">My Listings</h3>
                     <div id="active-listings"></div>
-                    
-                    <h3 class="mt-4 text-muted">Completed History</h3>
-                    <div id="completed-listings"></div>
+
+                    <hr>
+                    <h3>Verify QR (Delivery)</h3>
+                    <input id="qrInput" placeholder="Paste QR code here (FW-...)">
+                    <button type="button" onclick="donor.verifyQR()">Verify & Mark Delivered</button>
+
+                    <hr>
+                    <h3>Pending Requests</h3>
+                    <div id="pending-requests"></div>
                 </div>`;
             donor.loadMyListings();
+            donor.loadPending();
         } else {
             content.innerHTML = `
                 <div class="receiver-panel">
                     <h3>Available Food Market</h3>
-                    <p>Help reduce food waste by claiming these items!</p>
+                    <p>Help reduce food waste by reserving items!</p>
                     <div id="market-listings" class="market-grid"></div>
+
+                    <hr>
+                    <h3>My Cart</h3>
+                    <ul id="my-cart"></ul>
                 </div>`;
             receiver.loadMarket();
+            receiver.loadCartUI();
         }
     },
+
     logout() { location.reload(); }
 };
 
 const donor = {
     async createListing() {
-        const data = {
-            name: document.getElementById('itemName').value,
-            quantity: document.getElementById('itemQty').value,
-            location: document.getElementById('location').value,
-            expiration_date: document.getElementById('expDate').value,
-            price: document.getElementById('itemPrice').value || 0
-        };
+        // FormData (for image upload)
+        const fd = new FormData();
+        fd.append('name', document.getElementById('itemName').value);
+        fd.append('quantity', document.getElementById('itemQty').value);
+        fd.append('location', document.getElementById('location').value);
+        fd.append('expiration_date', document.getElementById('expDate').value);
+        fd.append('price', document.getElementById('itemPrice').value || 0);
+
+        const img = document.getElementById('itemImage').files[0];
+        if (img) fd.append('image', img);
+
         const response = await fetch('api/listings.php?action=create', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: fd
         });
+
         const result = await response.json();
+        alert(result.message);
         if (result.status === 'success') {
-            alert(result.message);
             this.loadMyListings();
         }
     },
@@ -96,44 +118,69 @@ const donor = {
     async loadMyListings() {
         const response = await fetch('api/listings.php');
         const result = await response.json();
-        
+
         const activeDiv = document.getElementById('active-listings');
-        const completedDiv = document.getElementById('completed-listings');
-        
-        const activeItems = result.listings.filter(i => i.status !== 'completed');
-        const completedItems = result.listings.filter(i => i.status === 'completed');
 
-        // Render Active Table
-        if (activeItems.length > 0) {
-            let html = `<table class="listing-table"><thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead><tbody>`;
-            activeItems.forEach(item => {
-                let action = item.status === 'reserved' 
-                    ? `<button class="btn-sm btn-warn" onclick="donor.completeListing(${item.id})">Mark Delivered</button>`
-                    : `<span class="text-info">Waiting...</span>`;
-                html += `<tr><td>${item.name}</td><td>${item.quantity}</td><td><span class="badge ${item.status}">${item.status}</span></td><td>${action}</td></tr>`;
-            });
-            activeDiv.innerHTML = html + `</tbody></table>`;
-        } else { activeDiv.innerHTML = "<p>No active items.</p>"; }
+        if (!result.listings || result.listings.length === 0) {
+            activeDiv.innerHTML = "<p>No items yet.</p>";
+            return;
+        }
 
-        // Render Completed Table
-        if (completedItems.length > 0) {
-            let html = `<table class="listing-table archived"><thead><tr><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody>`;
-            completedItems.forEach(item => {
-                html += `<tr><td>${item.name}</td><td>${item.quantity}</td><td><span class="badge completed">Completed</span></td></tr>`;
-            });
-            completedDiv.innerHTML = html + `</tbody></table>`;
-        } else { completedDiv.innerHTML = "<p>No history yet.</p>"; }
+        // NOTE: DB listing.status = active/depleted/suspended (NOT reserved/completed)
+        let html = `<table class="listing-table"><thead>
+            <tr><th>Item</th><th>Qty</th><th>Status</th></tr>
+        </thead><tbody>`;
+
+        result.listings.forEach(item => {
+            html += `<tr>
+                <td>${item.name}</td>
+                <td>${item.quantity}</td>
+                <td><span class="badge ${item.status}">${item.status}</span></td>
+            </tr>`;
+        });
+
+        activeDiv.innerHTML = html + `</tbody></table>`;
     },
 
-    async completeListing(id) {
-        if(!confirm("Did you deliver this item?")) return;
-        const response = await fetch('api/listings.php?action=complete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ listing_id: id })
+    async loadPending() {
+        const r = await fetch('api/reservations.php?action=donor_pending');
+        const res = await r.json();
+
+        const div = document.getElementById('pending-requests');
+        if (!res.items || res.items.length === 0) {
+            div.innerHTML = "<p>No pending requests.</p>";
+            return;
+        }
+
+        div.innerHTML = res.items.map(x => `
+            <div style="margin:8px 0;">
+              <b>${x.name}</b> × ${x.reserved_amount}
+              <button type="button" onclick="donor.approve(${x.reservation_id})">Approve</button>
+            </div>
+        `).join('');
+    },
+
+    async approve(reservationId) {
+        const r = await fetch('api/reservations.php?action=approve', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ reservation_id: reservationId })
         });
-        const result = await response.json();
-        if (result.status === 'success') this.loadMyListings();
+        const res = await r.json();
+        alert(res.message);
+        this.loadPending();
+    },
+
+    async verifyQR() {
+        const qr = document.getElementById('qrInput').value.trim();
+        const r = await fetch('api/reservations.php?action=verify_qr', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ qr })
+        });
+        const res = await r.json();
+        alert(res.message);
+        this.loadPending();
     }
 };
 
@@ -142,31 +189,85 @@ const receiver = {
         const response = await fetch('api/listings.php');
         const result = await response.json();
         const container = document.getElementById('market-listings');
-        if (result.listings && result.listings.length > 0) {
-            let html = '';
-            result.listings.forEach(item => {
-                html += `
-                <div class="food-card">
-                    <div class="card-badge">ACTIVE</div>
-                    <h4>${item.name}</h4>
-                    <p>📍 ${item.location}</p>
-                    <p class="card-price">${item.price > 0 ? '$' + item.price : 'FREE'}</p>
-                    <button type="button" onclick="receiver.claimFood(${item.id})" class="btn-claim">Claim Now</button>
-                </div>`;
-            });
-            container.innerHTML = html;
-        } else { container.innerHTML = "<p>No items available right now.</p>"; }
+
+        if (!result.listings || result.listings.length === 0) {
+            container.innerHTML = "<p>No items available right now.</p>";
+            return;
+        }
+
+        let html = '';
+        result.listings.forEach(item => {
+            html += `
+            <div class="food-card">
+                <div class="card-badge">ACTIVE</div>
+
+                <img src="uploads/${item.image_path || 'default_food.jpeg'}"
+                     style="width:100%;height:150px;object-fit:cover;border-radius:8px;margin-bottom:10px;">
+
+                <h4>${item.name}</h4>
+                <p>📍 ${item.location || '-'}</p>
+                <p><b>Available:</b> ${item.quantity}</p>
+                <p class="card-price">${item.price > 0 ? '$' + item.price : 'FREE'}</p>
+
+                <input type="number" min="1" max="${item.quantity}" value="1" id="qty_${item.id}">
+                <button type="button" class="btn-claim" onclick="receiver.addToCart(${item.id})">
+                  Add to Cart
+                </button>
+            </div>`;
+        });
+
+        container.innerHTML = html;
     },
-    async claimFood(id) {
-        if (!confirm("Are you sure you want to claim this item?")) return;
-        const response = await fetch('api/listings.php?action=claim', {
+
+    async addToCart(listingId) {
+        const qty = parseInt(document.getElementById('qty_' + listingId).value, 10);
+
+        const response = await fetch('api/reservations.php?action=add_to_cart', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ listing_id: id })
+            body: JSON.stringify({ listing_id: listingId, quantity: qty })
         });
+
         const result = await response.json();
         alert(result.message);
-        if (result.status === 'success') this.loadMarket();
+
+        if (result.status === 'success') {
+            this.loadMarket();   // stock update for all
+            this.loadCartUI();   // show cart
+        }
+    },
+
+    async loadCartUI() {
+        const r = await fetch('api/reservations.php?action=cart');
+        const res = await r.json();
+
+        const ul = document.getElementById('my-cart');
+        if (!res.items || res.items.length === 0) {
+            ul.innerHTML = "<li>Your cart is empty.</li>";
+            return;
+        }
+
+        ul.innerHTML = res.items.map(it => `
+          <li style="margin:8px 0;">
+            <b>${it.name}</b> × ${it.reserved_amount} <span>(${it.status})</span>
+            ${it.status === 'approved' && it.qr_code ? `<br><b>QR:</b> ${it.qr_code}` : ``}
+            ${it.status === 'pending'
+              ? `<br><button onclick="receiver.removeFromCart(${it.reservation_id})">Remove</button>`
+              : ``}
+          </li>
+        `).join('');
+    },
+
+    async removeFromCart(reservationId) {
+        const r = await fetch('api/reservations.php?action=remove_from_cart', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ reservation_id: reservationId })
+        });
+        const res = await r.json();
+        alert(res.message);
+        this.loadMarket();
+        this.loadCartUI();
     }
 };
 

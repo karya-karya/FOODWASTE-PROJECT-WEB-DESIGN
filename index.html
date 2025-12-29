@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodWaste - Login</title>
+    <title>FoodWaste - Professional Portal</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
             <p>Welcome back! Please enter your details.</p>
             <input type="email" id="loginEmail" placeholder="Email Address">
             <input type="password" id="loginPass" placeholder="Password">
-            <button onclick="auth.login()">Sign In</button>
+            <button type="button" onclick="auth.login()">Sign In</button>
             <p class="toggle-text">Don't have an account? <a href="#" onclick="toggleAuth()">Register here</a></p>
         </div>
 
@@ -26,10 +26,22 @@
                 <option value="receiver">Receiver</option>
                 <option value="donor">Donor</option>
             </select>
-            <button onclick="auth.register()">Sign Up</button>
+            <button type="button" onclick="auth.register()">Sign Up</button>
             <p class="toggle-text">Already a member? <a href="#" onclick="toggleAuth()">Login here</a></p>
         </div>
     </div>
+
+    <div id="dashboard-section" class="container" style="display:none;">
+        <div class="header">
+            <h2>Welcome, <span id="user-display-name">User</span>!</h2>
+            <p>Role: <b id="user-display-role">N/A</b></p>
+            <button type="button" class="btn-sm" onclick="auth.logout()">Logout</button>
+        </div>
+        <hr>
+        <div id="role-content">
+            </div>
+    </div>
+
     <script src="js/app.js"></script>
 </body>
 </html>

@@ -4,7 +4,9 @@ body {
     display: flex;
     justify-content: center;
     padding-top: 50px;
+    margin: 0;
 }
+
 .container {
     width: 100%;
     max-width: 400px;
@@ -13,11 +15,15 @@ body {
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
+
 #dashboard-section {
     max-width: 800px;
+    width: 90%;
 }
+
 .auth-box h2 { color: #2ecc71; margin-bottom: 10px; }
 .auth-box p { color: #666; font-size: 14px; margin-bottom: 20px; }
+
 input, select, button {
     width: 100%;
     padding: 12px;
@@ -25,7 +31,17 @@ input, select, button {
     border: 1px solid #ddd;
     border-radius: 6px;
     box-sizing: border-box;
+    display: block;
 }
+
+label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #444;
+    text-align: left;
+}
+
 button {
     background-color: #27ae60;
     color: white;
@@ -33,7 +49,27 @@ button {
     font-weight: bold;
     cursor: pointer;
     transition: 0.3s;
+    margin-top: 10px;
 }
+
 button:hover { background-color: #219150; }
+
 .toggle-text { text-align: center; margin-top: 10px; }
-.btn-sm { width: auto; padding: 5px 10px; background: #e74c3c; margin-left: 10px;}
+
+.btn-sm { 
+    width: auto; 
+    padding: 8px 15px; 
+    background: #e74c3c; 
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.listing-form {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-top: 20px;
+}
+
+.listing-form h3 { margin-top: 0; }

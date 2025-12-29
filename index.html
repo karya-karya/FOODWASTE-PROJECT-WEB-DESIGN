@@ -1,15 +1,35 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FoodWaste</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodWaste - Login</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div id="auth-section" class="container">
+        <div id="loginForm" class="auth-box">
+            <h2>Login</h2>
+            <p>Welcome back! Please enter your details.</p>
+            <input type="email" id="loginEmail" placeholder="Email Address">
+            <input type="password" id="loginPass" placeholder="Password">
+            <button onclick="auth.login()">Sign In</button>
+            <p class="toggle-text">Don't have an account? <a href="#" onclick="toggleAuth()">Register here</a></p>
+        </div>
 
-<h1>FoodWaste Project</h1>
-<p>Rebuild integration branch aktif.</p>
-
-<script src="js/app.js"></script>
+        <div id="registerForm" class="auth-box" style="display:none;">
+            <h2>Create Account</h2>
+            <input type="text" id="regName" placeholder="Full Name">
+            <input type="email" id="regEmail" placeholder="Email Address">
+            <input type="password" id="regPass" placeholder="Password">
+            <select id="regRole">
+                <option value="receiver">Receiver</option>
+                <option value="donor">Donor</option>
+            </select>
+            <button onclick="auth.register()">Sign Up</button>
+            <p class="toggle-text">Already a member? <a href="#" onclick="toggleAuth()">Login here</a></p>
+        </div>
+    </div>
+    <script src="js/app.js"></script>
 </body>
 </html>

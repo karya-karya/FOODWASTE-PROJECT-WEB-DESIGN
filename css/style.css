@@ -1,0 +1,39 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    padding-top: 50px;
+}
+.container {
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+#dashboard-section {
+    max-width: 800px;
+}
+.auth-box h2 { color: #2ecc71; margin-bottom: 10px; }
+.auth-box p { color: #666; font-size: 14px; margin-bottom: 20px; }
+input, select, button {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+button {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+button:hover { background-color: #219150; }
+.toggle-text { text-align: center; margin-top: 10px; }
+.btn-sm { width: auto; padding: 5px 10px; background: #e74c3c; margin-left: 10px;}

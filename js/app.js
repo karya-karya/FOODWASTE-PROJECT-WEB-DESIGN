@@ -2,6 +2,8 @@ const auth = {
     async login() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPass').value;
+        if (!email || !password) return alert("Please fill all fields.");
+
         const response = await fetch('api/auth.php?action=login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -38,24 +40,30 @@ const auth = {
         if (user.role === 'donor') {
             content.innerHTML = `
                 <div class="donor-panel">
-                    <h3>Add New Surplus Food</h3>
-                    <div class="listing-form">
-                        <input type="text" id="itemName" placeholder="Item Name">
-                        <input type="number" id="itemQty" placeholder="Quantity">
-                        <input type="text" id="location" placeholder="Pickup Location">
-                        <input type="date" id="expDate">
-                        <input type="number" step="0.01" id="itemPrice" placeholder="Price (0 for free)">
-                        <button type="button" onclick="donor.createListing()">Post Listing</button>
+                    <div class="card-form">
+                        <h3>Add New Surplus Food</h3>
+                        <div class="listing-form">
+                            <input type="text" id="itemName" placeholder="Item Name">
+                            <input type="number" id="itemQty" placeholder="Quantity">
+                            <input type="text" id="location" placeholder="Pickup Location">
+                            <input type="date" id="expDate">
+                            <input type="number" step="0.01" id="itemPrice" placeholder="Price (0 for free)">
+                            <button type="button" onclick="donor.createListing()">Post Listing</button>
+                        </div>
                     </div>
-                    <hr>
-                    <h3>My Inventory Control</h3>
-                    <div id="my-listings" class="table-responsive"></div>
+                    
+                    <h3 class="mt-4">Active & Reserved Items</h3>
+                    <div id="active-listings"></div>
+                    
+                    <h3 class="mt-4 text-muted">Completed History</h3>
+                    <div id="completed-listings"></div>
                 </div>`;
             donor.loadMyListings();
         } else {
             content.innerHTML = `
                 <div class="receiver-panel">
                     <h3>Available Food Market</h3>
+                    <p>Help reduce food waste by claiming these items!</p>
                     <div id="market-listings" class="market-grid"></div>
                 </div>`;
             receiver.loadMarket();
@@ -88,42 +96,43 @@ const donor = {
     async loadMyListings() {
         const response = await fetch('api/listings.php');
         const result = await response.json();
-        const container = document.getElementById('my-listings');
         
-        if (result.listings.length > 0) {
-            let html = `<table class="listing-table"><thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead><tbody>`;
-            result.listings.forEach(item => {
-                let actionBtn = '';
-                if (item.status === 'reserved') {
-                    actionBtn = `<button class="btn-sm btn-warn" onclick="donor.completeListing(${item.id})">Deliver</button>`;
-                } else if (item.status === 'completed') {
-                    actionBtn = `<small class="text-muted">Completed</small>`;
-                } else {
-                    actionBtn = `<small class="text-info">Active</small>`;
-                }
+        const activeDiv = document.getElementById('active-listings');
+        const completedDiv = document.getElementById('completed-listings');
+        
+        const activeItems = result.listings.filter(i => i.status !== 'completed');
+        const completedItems = result.listings.filter(i => i.status === 'completed');
 
-                html += `<tr>
-                    <td>${item.name}</td>
-                    <td>${item.quantity}</td>
-                    <td><span class="badge ${item.status}">${item.status}</span></td>
-                    <td>${actionBtn}</td>
-                </tr>`;
+        // Render Active Table
+        if (activeItems.length > 0) {
+            let html = `<table class="listing-table"><thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead><tbody>`;
+            activeItems.forEach(item => {
+                let action = item.status === 'reserved' 
+                    ? `<button class="btn-sm btn-warn" onclick="donor.completeListing(${item.id})">Mark Delivered</button>`
+                    : `<span class="text-info">Waiting...</span>`;
+                html += `<tr><td>${item.name}</td><td>${item.quantity}</td><td><span class="badge ${item.status}">${item.status}</span></td><td>${action}</td></tr>`;
             });
-            container.innerHTML = html + `</tbody></table>`;
-        } else {
-            container.innerHTML = "<p>You have no listings.</p>";
-        }
+            activeDiv.innerHTML = html + `</tbody></table>`;
+        } else { activeDiv.innerHTML = "<p>No active items.</p>"; }
+
+        // Render Completed Table
+        if (completedItems.length > 0) {
+            let html = `<table class="listing-table archived"><thead><tr><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody>`;
+            completedItems.forEach(item => {
+                html += `<tr><td>${item.name}</td><td>${item.quantity}</td><td><span class="badge completed">Completed</span></td></tr>`;
+            });
+            completedDiv.innerHTML = html + `</tbody></table>`;
+        } else { completedDiv.innerHTML = "<p>No history yet.</p>"; }
     },
 
     async completeListing(id) {
-        if(!confirm("Has this item been delivered?")) return;
+        if(!confirm("Did you deliver this item?")) return;
         const response = await fetch('api/listings.php?action=complete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ listing_id: id })
         });
         const result = await response.json();
-        alert(result.message);
         if (result.status === 'success') this.loadMyListings();
     }
 };
@@ -133,7 +142,7 @@ const receiver = {
         const response = await fetch('api/listings.php');
         const result = await response.json();
         const container = document.getElementById('market-listings');
-        if (result.listings.length > 0) {
+        if (result.listings && result.listings.length > 0) {
             let html = '';
             result.listings.forEach(item => {
                 html += `
@@ -146,13 +155,10 @@ const receiver = {
                 </div>`;
             });
             container.innerHTML = html;
-        } else {
-            container.innerHTML = "<p>No food available in market.</p>";
-        }
+        } else { container.innerHTML = "<p>No items available right now.</p>"; }
     },
-
     async claimFood(id) {
-        if (!confirm("Claim this item?")) return;
+        if (!confirm("Are you sure you want to claim this item?")) return;
         const response = await fetch('api/listings.php?action=claim', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

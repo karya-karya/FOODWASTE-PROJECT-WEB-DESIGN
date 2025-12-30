@@ -58,20 +58,15 @@ const auth = {
           <div id="active-listings"></div>
 
           <hr>
-          <h3>Verify QR (Delivery)</h3>
-          <p style="margin-top:-6px; color:#666;">You can paste the QR text OR scan with your camera.</p>
-
-          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-            <input id="qrInput" placeholder="Paste QR code here (FW-...)" style="flex:1; min-width:240px;">
-            <button type="button" onclick="donor.verifyQR()">Verify (Paste)</button>
-            <button type="button" onclick="donor.startScanner()">Scan with Camera</button>
-            <button type="button" onclick="donor.stopScanner()">Stop Scanner</button>
-          </div>
-
-          <div id="qr-reader" style="width:320px; max-width:100%; margin-top:12px;"></div>
-
-          <hr>
           <h3>Pending Requests</h3>
+          <p style="margin-top:-6px; color:#666;">
+            Approve a request to generate a QR for the receiver. Then confirm delivery by scanning on the QR Scanner page.
+          </p>
+
+          <a href="scan.html" style="display:inline-block; margin-bottom:10px;">
+            <button type="button">Open QR Scanner</button>
+          </a>
+
           <div id="pending-requests"></div>
         </div>
       `;
@@ -98,8 +93,6 @@ const auth = {
 };
 
 const donor = {
-  _scanner: null,
-
   async createListing() {
     const fd = new FormData();
     fd.append('name', document.getElementById('itemName').value);
@@ -175,75 +168,6 @@ const donor = {
     const res = await r.json();
     alert(res.message);
     this.loadPending();
-  },
-
-  async verifyQR() {
-    const qr = document.getElementById('qrInput').value.trim();
-    if (!qr) return alert("Please paste a QR value first.");
-    await this._verifyQrValue(qr);
-  },
-
-  async _verifyQrValue(qr) {
-    const r = await fetch('api/reservations.php?action=verify_qr', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ qr })
-    });
-    const res = await r.json();
-    alert(res.message);
-    this.loadPending();
-  },
-
-  async startScanner() {
-    // library check
-    if (typeof Html5Qrcode === "undefined") {
-      alert("Scanner library not loaded. Check index.html script tags.");
-      return;
-    }
-
-    const readerId = "qr-reader";
-    document.getElementById(readerId).innerHTML = "";
-
-    if (!this._scanner) {
-      this._scanner = new Html5Qrcode(readerId);
-    }
-
-    try {
-      const cameras = await Html5Qrcode.getCameras();
-      if (!cameras || cameras.length === 0) {
-        alert("No camera found.");
-        return;
-      }
-
-      // Prefer back camera if exists
-      const backCam = cameras.find(c => /back|rear|environment/i.test(c.label));
-      const cameraId = (backCam || cameras[0]).id;
-
-      await this._scanner.start(
-        cameraId,
-        { fps: 10, qrbox: 250 },
-        async (decodedText) => {
-          // Successful scan -> verify and stop to prevent multiple hits
-          await this._verifyQrValue(decodedText);
-          await this.stopScanner();
-        },
-        () => { /* ignore scan errors */ }
-      );
-    } catch (e) {
-      alert("Scanner failed to start. Please allow camera permission.\n" + e);
-    }
-  },
-
-  async stopScanner() {
-    if (!this._scanner) return;
-    try {
-      const state = this._scanner.getState ? this._scanner.getState() : null;
-      // stop only if running
-      await this._scanner.stop();
-      await this._scanner.clear();
-    } catch (_) {
-      // ignore if already stopped
-    }
   }
 };
 
@@ -284,11 +208,13 @@ const receiver = {
 
   async addToCart(listingId) {
     const qty = parseInt(document.getElementById('qty_' + listingId).value, 10);
+
     const response = await fetch('api/reservations.php?action=add_to_cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ listing_id: listingId, quantity: qty })
     });
+
     const result = await response.json();
     alert(result.message);
 
@@ -308,14 +234,21 @@ const receiver = {
       return;
     }
 
-    ul.innerHTML = res.items.map(it => `
+    ul.innerHTML = res.items.map(it => {
+      const badge =
+        it.status === 'delivered' ? `<span style="color:green;font-weight:700;">Delivered ✅</span>` :
+        it.status === 'approved'  ? `<span style="color:#2c3e50;font-weight:700;">Approved</span>` :
+                                   `<span style="color:#e67e22;font-weight:700;">Pending</span>`;
+
+      return `
       <li style="margin:10px 0; padding:10px; border:1px solid #eee; border-radius:8px;">
         <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
           <img src="uploads/${it.image_path || 'default_food.jpeg'}"
             style="width:90px;height:70px;object-fit:cover;border-radius:6px;">
           <div style="flex:1; min-width:200px;">
             <b>${it.name}</b><br>
-            Qty: ${it.reserved_amount} <span style="color:#666;">(${it.status})</span>
+            Qty: ${it.reserved_amount} ${badge}
+
             ${it.status === 'pending'
               ? `<div style="margin-top:6px;">
                    <button onclick="receiver.removeFromCart(${it.reservation_id})">Remove</button>
@@ -331,25 +264,19 @@ const receiver = {
                <div style="margin-top:8px; font-size:12px; color:#555;">${it.qr_code}</div>
              </div>`
           : ``}
-      </li>
-    `).join('');
+      </li>`;
+    }).join('');
 
-    // Render QR images after HTML is set
     this.renderQrImages(res.items);
   },
 
   renderQrImages(items) {
-    if (typeof QRCode === "undefined") {
-      // library not loaded (index.html missing tag)
-      return;
-    }
+    if (typeof QRCode === "undefined") return;
 
     items.forEach(it => {
       if (it.status === 'approved' && it.qr_code) {
         const el = document.getElementById(`qr_${it.reservation_id}`);
         if (!el) return;
-
-        // clear old QR if re-render
         el.innerHTML = "";
         new QRCode(el, {
           text: it.qr_code,

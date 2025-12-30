@@ -35,7 +35,7 @@ if ($method === 'POST' && $action === 'add_to_cart' && $role === 'receiver') {
     try {
         $pdo->beginTransaction();
 
-        // Lock listing
+        // Lock listing row
         $st = $pdo->prepare("SELECT id, quantity, status FROM listings WHERE id=? FOR UPDATE");
         $st->execute([$listingId]);
         $l = $st->fetch(PDO::FETCH_ASSOC);
@@ -76,7 +76,7 @@ if ($method === 'POST' && $action === 'add_to_cart' && $role === 'receiver') {
 }
 
 /* ======================================
-   RECEIVER: View Cart (pending + approved)
+   RECEIVER: View Cart (pending + approved + delivered)
 ====================================== */
 if ($method === 'GET' && $action === 'cart' && $role === 'receiver') {
     $st = $pdo->prepare("
@@ -92,7 +92,7 @@ if ($method === 'GET' && $action === 'cart' && $role === 'receiver') {
             l.image_path
         FROM reservations r
         JOIN listings l ON l.id = r.listing_id
-        WHERE r.receiver_id=? AND r.status IN ('pending','approved')
+        WHERE r.receiver_id=? AND r.status IN ('pending','approved','delivered')
         ORDER BY r.reservation_date DESC
     ");
     $st->execute([$userId]);
@@ -135,10 +135,11 @@ if ($method === 'POST' && $action === 'remove_from_cart' && $role === 'receiver'
 
         if ($l) {
             $newQty = (int)$l['quantity'] + $qty;
-            $pdo->prepare("UPDATE listings SET quantity=?, status='active' WHERE id=?")->execute([$newQty, $listingId]);
+            $pdo->prepare("UPDATE listings SET quantity=?, status='active' WHERE id=?")
+                ->execute([$newQty, $listingId]);
         }
 
-        // Mark reservation cancelled (history)
+        // Keep history
         $pdo->prepare("UPDATE reservations SET status='cancelled' WHERE id=?")->execute([$reservationId]);
 
         $pdo->commit();
@@ -183,7 +184,7 @@ if ($method === 'POST' && $action === 'approve' && $role === 'donor') {
         exit;
     }
 
-    // Check donor owns listing
+    // Donor ownership check
     $st = $pdo->prepare("
         SELECT r.id, l.donor_id
         FROM reservations r
@@ -255,7 +256,9 @@ if ($method === 'POST' && $action === 'verify_qr' && $role === 'donor') {
         exit;
     }
 
-    $pdo->prepare("UPDATE reservations SET status='delivered' WHERE id=?")->execute([$reservationId]);
+    $pdo->prepare("UPDATE reservations SET status='delivered' WHERE id=?")
+        ->execute([$reservationId]);
+
     echo json_encode(["status"=>"success","message"=>"Delivery confirmed"]);
     exit;
 }

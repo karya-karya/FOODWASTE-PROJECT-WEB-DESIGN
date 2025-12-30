@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoodWaste - QR Scanner</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h2>QR Scanner</h2>
+        <p>Scan the receiver’s QR code to confirm delivery.</p>
+      </div>
+      <a href="index.html"><button type="button">Back</button></a>
+    </div>
+
+    <hr />
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <input id="qrInput" placeholder="Or paste QR text (FW-...)" style="flex:1; min-width:260px;">
+      <button type="button" onclick="scan.verifyPaste()">Verify (Paste)</button>
+      <button type="button" onclick="scan.start()">Start Camera</button>
+      <button type="button" onclick="scan.stop()">Stop</button>
+    </div>
+
+    <div id="qr-reader" style="width:320px; max-width:100%; margin-top:12px;"></div>
+
+    <div id="scan-status" style="margin-top:12px; padding:10px; border:1px solid #eee; border-radius:8px;">
+      Status: Waiting...
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/scan.js"></script>
+</body>
+</html>

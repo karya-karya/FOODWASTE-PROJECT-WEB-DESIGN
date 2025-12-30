@@ -85,6 +85,7 @@ if ($method === 'GET' && $action === 'cart' && $role === 'receiver') {
             r.reserved_amount,
             r.status,
             r.qr_code,
+            r.reservation_date,
             l.id AS listing_id,
             l.name,
             l.location,
@@ -152,6 +153,74 @@ if ($method === 'POST' && $action === 'remove_from_cart' && $role === 'receiver'
 }
 
 /* ======================================
+   RECEIVER: Clear Cart (only pending)
+   - restore stock for all pending items
+====================================== */
+if ($method === 'POST' && $action === 'clear_cart' && $role === 'receiver') {
+    try {
+        $pdo->beginTransaction();
+
+        $st = $pdo->prepare("
+            SELECT id, listing_id, reserved_amount
+            FROM reservations
+            WHERE receiver_id=? AND status='pending'
+            FOR UPDATE
+        ");
+        $st->execute([$userId]);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($rows as $r) {
+            $listingId = (int)$r['listing_id'];
+            $qty = (int)$r['reserved_amount'];
+
+            $ls = $pdo->prepare("SELECT quantity FROM listings WHERE id=? FOR UPDATE");
+            $ls->execute([$listingId]);
+            $l = $ls->fetch(PDO::FETCH_ASSOC);
+
+            if ($l) {
+                $newQty = (int)$l['quantity'] + $qty;
+                $pdo->prepare("UPDATE listings SET quantity=?, status='active' WHERE id=?")
+                    ->execute([$newQty, $listingId]);
+            }
+
+            $pdo->prepare("UPDATE reservations SET status='cancelled' WHERE id=?")
+                ->execute([(int)$r['id']]);
+        }
+
+        $pdo->commit();
+        echo json_encode(["status"=>"success","message"=>"Cart cleared"]);
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        echo json_encode(["status"=>"error","message"=>$e->getMessage()]);
+    }
+    exit;
+}
+
+/* ======================================
+   RECEIVER: History (delivered + cancelled)
+====================================== */
+if ($method === 'GET' && $action === 'receiver_history' && $role === 'receiver') {
+    $st = $pdo->prepare("
+        SELECT 
+            r.id AS reservation_id,
+            r.reserved_amount,
+            r.status,
+            r.reservation_date,
+            l.name,
+            l.location,
+            l.price,
+            l.image_path
+        FROM reservations r
+        JOIN listings l ON l.id = r.listing_id
+        WHERE r.receiver_id=? AND r.status IN ('delivered','cancelled')
+        ORDER BY r.reservation_date DESC
+    ");
+    $st->execute([$userId]);
+    echo json_encode(["status"=>"success","items"=>$st->fetchAll()]);
+    exit;
+}
+
+/* ======================================
    DONOR: List pending requests for my listings
 ====================================== */
 if ($method === 'GET' && $action === 'donor_pending' && $role === 'donor') {
@@ -166,6 +235,30 @@ if ($method === 'GET' && $action === 'donor_pending' && $role === 'donor') {
         FROM reservations r
         JOIN listings l ON l.id = r.listing_id
         WHERE l.donor_id=? AND r.status='pending'
+        ORDER BY r.reservation_date DESC
+    ");
+    $st->execute([$userId]);
+    echo json_encode(["status"=>"success","items"=>$st->fetchAll()]);
+    exit;
+}
+
+/* ======================================
+   DONOR: Delivered History
+====================================== */
+if ($method === 'GET' && $action === 'donor_history' && $role === 'donor') {
+    $st = $pdo->prepare("
+        SELECT
+            r.id AS reservation_id,
+            r.reserved_amount,
+            r.status,
+            r.reservation_date,
+            l.name,
+            l.id AS listing_id,
+            u.full_name AS receiver_name
+        FROM reservations r
+        JOIN listings l ON l.id = r.listing_id
+        JOIN users u ON u.id = r.receiver_id
+        WHERE l.donor_id=? AND r.status='delivered'
         ORDER BY r.reservation_date DESC
     ");
     $st->execute([$userId]);

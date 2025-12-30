@@ -68,10 +68,15 @@ const auth = {
           </a>
 
           <div id="pending-requests"></div>
+
+          <hr>
+          <h3>Delivered History</h3>
+          <div id="donor-history"></div>
         </div>
       `;
       donor.loadMyListings();
       donor.loadPending();
+      donor.loadHistory();
     } else {
       content.innerHTML = `
         <div class="receiver-panel">
@@ -80,12 +85,20 @@ const auth = {
           <div id="market-listings" class="market-grid"></div>
 
           <hr>
-          <h3>My Cart</h3>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <h3 style="margin:0;">My Cart</h3>
+            <button type="button" onclick="receiver.clearCart()">Clear Cart</button>
+          </div>
           <ul id="my-cart"></ul>
+
+          <hr>
+          <h3>My History</h3>
+          <div id="receiver-history"></div>
         </div>
       `;
       receiver.loadMarket();
       receiver.loadCartUI();
+      receiver.loadHistory();
     }
   },
 
@@ -168,6 +181,42 @@ const donor = {
     const res = await r.json();
     alert(res.message);
     this.loadPending();
+  },
+
+  async loadHistory() {
+    const r = await fetch('api/reservations.php?action=donor_history');
+    const res = await r.json();
+
+    const div = document.getElementById('donor-history');
+    if (!div) return;
+
+    if (!res.items || res.items.length === 0) {
+      div.innerHTML = "<p>No delivered reservations yet.</p>";
+      return;
+    }
+
+    div.innerHTML = `
+      <table class="listing-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Receiver</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${res.items.map(x => `
+            <tr>
+              <td>${x.name}</td>
+              <td>${x.reserved_amount}</td>
+              <td>${x.receiver_name}</td>
+              <td><span style="color:green;font-weight:700;">Delivered ✅</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
   }
 };
 
@@ -221,6 +270,25 @@ const receiver = {
     if (result.status === 'success') {
       this.loadMarket();
       this.loadCartUI();
+      this.loadHistory();
+    }
+  },
+
+  async clearCart() {
+    if (!confirm("Clear all pending items from your cart?")) return;
+
+    const r = await fetch('api/reservations.php?action=clear_cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const res = await r.json();
+    alert(res.message);
+
+    if (res.status === 'success') {
+      this.loadMarket();
+      this.loadCartUI();
+      this.loadHistory();
     }
   },
 
@@ -278,11 +346,7 @@ const receiver = {
         const el = document.getElementById(`qr_${it.reservation_id}`);
         if (!el) return;
         el.innerHTML = "";
-        new QRCode(el, {
-          text: it.qr_code,
-          width: 160,
-          height: 160
-        });
+        new QRCode(el, { text: it.qr_code, width: 160, height: 160 });
       }
     });
   },
@@ -297,6 +361,38 @@ const receiver = {
     alert(res.message);
     this.loadMarket();
     this.loadCartUI();
+    this.loadHistory();
+  },
+
+  async loadHistory() {
+    const r = await fetch('api/reservations.php?action=receiver_history');
+    const res = await r.json();
+
+    const div = document.getElementById('receiver-history');
+    if (!div) return;
+
+    if (!res.items || res.items.length === 0) {
+      div.innerHTML = "<p>No history yet.</p>";
+      return;
+    }
+
+    div.innerHTML = res.items.map(it => {
+      const badge = it.status === 'delivered'
+        ? `<span style="color:green;font-weight:700;">Delivered ✅</span>`
+        : `<span style="color:#999;font-weight:700;">Cancelled</span>`;
+
+      return `
+        <div style="display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid #eee; border-radius:8px; margin:8px 0;">
+          <img src="uploads/${it.image_path || 'default_food.jpeg'}"
+            style="width:90px;height:70px;object-fit:cover;border-radius:6px;">
+          <div style="flex:1;">
+            <b>${it.name}</b> ${badge}<br>
+            Qty: ${it.reserved_amount}<br>
+            <span style="color:#666;">${it.location || '-'}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 };
 
